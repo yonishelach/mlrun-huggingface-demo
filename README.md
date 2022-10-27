@@ -1,6 +1,6 @@
 # mlrun-huggingface-demo
 
-This demo contain 2 notebooks: pipeline.ipynb and serving.ipynb.
+This demo contain 2 notebooks: [pipeline](./pipeline.ipynb) and [serving](./serving.ipynb).
 
 * The pipeline notebook shows how to create a real-time pipeline with MLRun which fine-tune a model by a dataset that are loaded from the [HuggingFace Hub](https://huggingface.co/docs/hub/index).
 The pipeline consist from 4 steps:
