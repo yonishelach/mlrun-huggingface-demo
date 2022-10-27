@@ -1,0 +1,102 @@
+kind: project
+metadata:
+  name: huggingface-yonatans
+  created: '2022-10-27T13:20:14.955000'
+spec:
+  functions:
+  - name: hugging-face-serving
+    spec:
+      kind: serving
+      metadata:
+        name: hugging-face-serving
+        tag: ''
+        project: huggingface-yonatans
+      spec:
+        command: ''
+        args: []
+        image: yonishelach/ml-models:huggingface-demo-3
+        build:
+          functionSourceCode: aW1wb3J0IG1scnVuCmZyb20gdHlwaW5nIGltcG9ydCBEaWN0LCBVbmlvbiwgTGlzdAoKTEFCRUxTID0gewogICAgIkxBQkVMXzAiOiAiTkVHQVRJVkUiLAogICAgIkxBQkVMXzEiOiAiUE9TSVRJVkUiCn0KZGVmIHByZXByb2Nlc3ModGV4dDogVW5pb25bc3RyLCBieXRlc10pIC0+IERpY3Q6CiAgICAiIiJDb252ZXJ0aW5nIGEgc2ltcGxlIHRleHQgaW50byBhIHN0cnVjdHVyZWQgYm9keSBmb3IgdGhlIHNlcnZpbmcgZnVuY3Rpb24KICAgIAogICAgOnBhcmFtIHRleHQ6IFRoZSB0ZXh0IHRvIHByZWRpY3QKICAgICIiIgogICAgcmV0dXJuIHsiaW5wdXRzIjogW3N0cih0ZXh0KV19CgoKZGVmIHBvc3Rwcm9jZXNzKG1vZGVsX3Jlc3BvbnNlOiBEaWN0KSAtPiBMaXN0OgogICAgIiIiVHJhbnNmZXJpbmcgdGhlIHByZWRpY3Rpb24gdG8gdGhlIGdyYWRpbyBpbnRlcmZhY2UuCiAgICAKICAgIDpwYXJhbSBtb2RlbF9yZXNwb25zZTogQSBkaWN0IHdpdGggdGhlIG1vZGVsIG91dHB1dAogICAgIiIiCiAgICBvdXRwdXQgPSBtb2RlbF9yZXNwb25zZVsib3V0cHV0cyJdWzBdCiAgICBwcmVkaWN0aW9uID0gTEFCRUxTW291dHB1dFsnbGFiZWwnXV0KICAgIHJldHVybiBbIlRoZSBzZW50aW1lbnQgaXMgIiArIHByZWRpY3Rpb24sICJUaGUgcHJlZGljdGlvbiBzY29yZSBpcyAiICsgc3RyKG91dHB1dFsnc2NvcmUnXSldCgpmcm9tIG1scnVuLnJ1bnRpbWVzIGltcG9ydCBudWNsaW9faW5pdF9ob29rCmRlZiBpbml0X2NvbnRleHQoY29udGV4dCk6CiAgICBudWNsaW9faW5pdF9ob29rKGNvbnRleHQsIGdsb2JhbHMoKSwgJ3NlcnZpbmdfdjInKQoKZGVmIGhhbmRsZXIoY29udGV4dCwgZXZlbnQpOgogICAgcmV0dXJuIGNvbnRleHQubWxydW5faGFuZGxlcihjb250ZXh0LCBldmVudCkK
+          commands: []
+          code_origin: src/gradio_serving.py
+          origin_filename: src/gradio_serving.py
+        description: ''
+        default_handler: ''
+        disable_auto_mount: false
+        env: []
+        resources:
+          requests:
+            memory: 1Mi
+            cpu: 25m
+          limits:
+            memory: 20Gi
+            cpu: '2'
+        priority_class_name: igz-workload-medium
+        preemption_mode: prevent
+        min_replicas: 1
+        max_replicas: 4
+        source: ''
+        function_kind: serving_v2
+        function_handler: gradio_serving:handler
+        graph:
+          steps:
+            preprocess:
+              kind: task
+              handler: preprocess
+              after: []
+            sentiment-analysis:
+              kind: task
+              class_name: mlrun.frameworks.huggingface.HuggingFaceModelServer
+              class_args:
+                task: sentiment-analysis
+                model_name: distilbert-base-uncased
+                model_class: AutoModelForSequenceClassification
+                tokenizer_name: distilbert-base-uncased
+                tokenizer_class: AutoTokenizer
+              after:
+              - preprocess
+            postprocess:
+              kind: task
+              handler: postprocess
+              after:
+              - sentiment-analysis
+              responder: true
+          engine: async
+        secret_sources: []
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: app.iguazio.com/lifecycle
+                  operator: NotIn
+                  values:
+                  - preemptible
+                - key: eks.amazonaws.com/capacityType
+                  operator: NotIn
+                  values:
+                  - SPOT
+                - key: node-lifecycle
+                  operator: NotIn
+                  values:
+                  - spot
+        tolerations: null
+        security_context: {}
+      verbose: false
+  - url: src/training_pipeline.py
+    name: training
+    kind: job
+    image: yonishelach/ml-models:huggingface-demo-3
+  - url: src/onnx_model_server.py
+    name: serving
+    kind: serving
+    image: yonishelach/ml-models:huggingface-demo-3
+  workflows:
+  - path: src/workflow.py
+    name: sentiment_analysis_workflow
+  artifacts: []
+  source: ''
+  desired_state: online
+  owner: yonatans
+status:
+  state: online
